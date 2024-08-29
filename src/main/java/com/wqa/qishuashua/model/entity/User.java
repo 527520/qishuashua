@@ -33,6 +33,11 @@ public class User implements Serializable {
     private String userPassword;
 
     /**
+     * 手机号
+     */
+    private String phoneNumber;
+
+    /**
      * 开放平台id
      */
     private String unionId;
@@ -58,9 +63,14 @@ public class User implements Serializable {
     private String userProfile;
 
     /**
-     * 用户角色：user/admin/ban
+     * 用户角色：user/admin/ban/vip
      */
     private String userRole;
+
+    /**
+     * 编辑时间
+     */
+    private Date editTime;
 
     /**
      * 创建时间
@@ -77,6 +87,21 @@ public class User implements Serializable {
      */
     @TableLogic
     private Integer isDelete;
+
+    /**
+     * 会员过期时间
+     */
+    private Date vipExpireTime;
+
+    /**
+     * 会员兑换码
+     */
+    private String vipCode;
+
+    /**
+     * 会员编号
+     */
+    private Long vipNumber;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

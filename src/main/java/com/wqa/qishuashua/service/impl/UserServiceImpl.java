@@ -15,10 +15,14 @@ import com.wqa.qishuashua.model.enums.UserRoleEnum;
 import com.wqa.qishuashua.model.vo.LoginUserVO;
 import com.wqa.qishuashua.model.vo.UserVO;
 import com.wqa.qishuashua.utils.SqlUtils;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import org.apache.commons.lang3.StringUtils;
@@ -39,28 +43,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final String SALT = "wqa";
 
     @Override
-    public long userRegister(String userAccount, String userPassword, String checkPassword) {
+    public long userRegister(String userAccount, String userPassword, String checkPassword, String phoneNumber, String userName) {
         // 1. 校验
-        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
+        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword, phoneNumber, userName)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
         }
         if (userAccount.length() < 4) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户账号过短");
         }
+        if (userName.length() < 2 || userName.length() > 20) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户账号过短");
+        }
         if (userPassword.length() < 8 || checkPassword.length() < 8) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户密码过短");
+        }
+        if (phoneNumber.length() != 11) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号错误");
         }
         // 密码和校验密码相同
         if (!userPassword.equals(checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
         }
+        String regex = "^1[3456789]\\d{9}$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(phoneNumber);
+        // 手机号不合法
+        if (!matcher.matches()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号不合法");
+        }
         synchronized (userAccount.intern()) {
-            // 账户不能重复
+            // 账户和手机号都不能重复
             QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("userAccount", userAccount);
+            queryWrapper.eq("userAccount", userAccount)
+                    .or()
+                    .eq("phoneNumber", phoneNumber);
             long count = this.baseMapper.selectCount(queryWrapper);
             if (count > 0) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号或手机号重复");
             }
             // 2. 加密
             String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
@@ -68,6 +87,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             User user = new User();
             user.setUserAccount(userAccount);
             user.setUserPassword(encryptPassword);
+            user.setPhoneNumber(phoneNumber);
+            user.setUserName(userName);
             boolean saveResult = this.save(user);
             if (!saveResult) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
@@ -196,6 +217,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public boolean isAdmin(User user) {
         return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
+    }
+
+    @Override
+    public boolean isAdminOrVip(User loginUser) {
+        return isAdmin(loginUser) || UserConstant.VIP_ROLE.equals(loginUser.getUserRole());
     }
 
     /**

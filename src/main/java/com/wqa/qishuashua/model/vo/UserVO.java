@@ -2,6 +2,8 @@ package com.wqa.qishuashua.model.vo;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 /**
@@ -38,6 +40,7 @@ public class UserVO implements Serializable {
     /**
      * 创建时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd hh:mm:ss")
     private Date createTime;
 
     private static final long serialVersionUID = 1L;

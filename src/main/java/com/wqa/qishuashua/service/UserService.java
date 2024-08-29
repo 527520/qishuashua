@@ -2,6 +2,9 @@ package com.wqa.qishuashua.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.wqa.qishuashua.common.ErrorCode;
+import com.wqa.qishuashua.constant.UserConstant;
+import com.wqa.qishuashua.exception.BusinessException;
 import com.wqa.qishuashua.model.dto.user.UserQueryRequest;
 import com.wqa.qishuashua.model.entity.User;
 import com.wqa.qishuashua.model.vo.LoginUserVO;
@@ -23,7 +26,7 @@ public interface UserService extends IService<User> {
      * @param checkPassword 校验密码
      * @return 新用户 id
      */
-    long userRegister(String userAccount, String userPassword, String checkPassword);
+    long userRegister(String userAccount, String userPassword, String checkPassword, String phoneNumber, String userName);
 
     /**
      * 用户登录
@@ -75,6 +78,11 @@ public interface UserService extends IService<User> {
      * @return
      */
     boolean isAdmin(User user);
+
+    /**
+     * 是否为管理员或VIP
+     */
+    boolean isAdminOrVip(User loginUser);
 
     /**
      * 用户注销
