@@ -19,6 +19,11 @@ public class UserUpdateRequest implements Serializable {
     private String userName;
 
     /**
+     * 手机号
+     */
+    private String phoneNumber;
+
+    /**
      * 用户头像
      */
     private String userAvatar;

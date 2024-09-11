@@ -230,8 +230,14 @@ public class QuestionController {
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
 
+        Long myId = null;
+        try {
+            myId = userService.getLoginUser(request).getId();
+        } catch (Exception e) {
+            log.info("未登录用户");
+        }
         Page<Question> questionPage = questionService.listQuestionByPage(questionQueryRequest,
-                false, userService.getLoginUser(request).getId());
+                false, myId);
         // 获取封装类
         return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }

@@ -50,6 +50,7 @@ server:
     session:
       cookie:
         max-age: 2592000
+        domain: localhost
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false

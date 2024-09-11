@@ -28,7 +28,7 @@ public class QuestionQueryRequest extends PageRequest implements Serializable {
     /**
      * 题库id
      */
-    private Long questionBankId;
+    private List<Long> questionBankIds;
 
     /**
      * 搜索词
@@ -74,6 +74,16 @@ public class QuestionQueryRequest extends PageRequest implements Serializable {
      * 仅会员可见（1 表示仅会员可见）
      */
     private Integer needVip;
+
+    /**
+     * 审核人 id
+     */
+    private Long reviewerId;
+
+    /**
+     * 题目来源
+     */
+    private String source;
 
     private static final long serialVersionUID = 1L;
 }

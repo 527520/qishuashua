@@ -19,6 +19,7 @@ public class UserAddRequest implements Serializable {
      */
     private String userAccount;
 
+
     /**
      * 用户头像
      */

@@ -20,6 +20,7 @@ import com.wqa.qishuashua.model.entity.QuestionBank;
 import com.wqa.qishuashua.model.entity.User;
 import com.wqa.qishuashua.model.enums.ReviewStatusEnum;
 import com.wqa.qishuashua.model.vo.QuestionBankVO;
+import com.wqa.qishuashua.model.vo.QuestionVO;
 import com.wqa.qishuashua.service.QuestionBankService;
 import com.wqa.qishuashua.service.QuestionService;
 import com.wqa.qishuashua.service.UserService;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * 题库接口
@@ -147,8 +149,9 @@ public class QuestionBankController {
      * @param questionBankQueryRequest
      * @return
      */
-    @GetMapping("/get/vo")
-    public BaseResponse<QuestionBankVO> getQuestionBankVOById(QuestionBankQueryRequest questionBankQueryRequest, HttpServletRequest request) {
+    @PostMapping("/get/vo")
+    public BaseResponse<QuestionBankVO> getQuestionBankVOById(@RequestBody QuestionBankQueryRequest questionBankQueryRequest,
+                                                              HttpServletRequest request) {
         ThrowUtils.throwIf(questionBankQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Long id = questionBankQueryRequest.getId();
         Boolean needQueryQuestionList = questionBankQueryRequest.getNeedQueryQuestionList();
@@ -164,11 +167,19 @@ public class QuestionBankController {
         QuestionBankVO questionBankVO = questionBankService.getQuestionBankVO(questionBank, request);
         // 获取题目列表
         if (ObjectUtils.isNotEmpty(needQueryQuestionList) && needQueryQuestionList) {
-            User loginUser = userService.getLoginUser(request);
+            Long myId = null;
+            try {
+                myId = userService.getLoginUser(request).getId();
+            } catch (Exception e) {
+                log.info("未登录用户");
+            }
             QuestionQueryRequest questionQueryRequest = new QuestionQueryRequest();
-            questionQueryRequest.setQuestionBankId(id);
-            Page<Question> questionPage = questionService.listQuestionByPage(questionQueryRequest, userService.isAdmin(loginUser), loginUser.getId());
-            questionBankVO.setQuestionPage(questionPage);
+            questionQueryRequest.setPageSize(questionBankQueryRequest.getPageSize());
+            questionQueryRequest.setCurrent(questionBankQueryRequest.getCurrent());
+            questionQueryRequest.setQuestionBankIds(Collections.singletonList(id));
+            Page<Question> questionPage = questionService.listQuestionByPage(questionQueryRequest, false, myId);
+            Page<QuestionVO> questionVOPage = questionService.getQuestionVOPage(questionPage, request);
+            questionBankVO.setQuestionPage(questionVOPage);
         }
         // 获取封装类
         return ResultUtils.success(questionBankVO);
@@ -210,7 +221,7 @@ public class QuestionBankController {
         long size = questionBankQueryRequest.getPageSize();
         Integer visibleStatus = questionBankQueryRequest.getVisibleStatus();
         // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(size > 200, ErrorCode.PARAMS_ERROR);
         // 查询数据库
         QueryWrapper<QuestionBank> queryWrapper = questionBankService.getQueryWrapper(questionBankQueryRequest);
         if (visibleStatus == null || visibleStatus == 0) {

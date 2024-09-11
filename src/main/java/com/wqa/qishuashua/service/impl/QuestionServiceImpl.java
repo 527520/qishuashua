@@ -28,10 +28,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -101,6 +98,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         String answer = questionQueryRequest.getAnswer();
         Integer needVip = questionQueryRequest.getNeedVip();
         Integer reviewStatus = questionQueryRequest.getReviewStatus();
+        Long reviewerId = questionQueryRequest.getReviewerId();
+        String source = questionQueryRequest.getSource();
+
         // 从多字段中搜索
         if (StringUtils.isNotBlank(searchText)) {
             // 需要拼接查询条件
@@ -112,6 +112,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
         queryWrapper.like(StringUtils.isNotBlank(content), "content", content);
         queryWrapper.like(StringUtils.isNotBlank(answer), "answer", answer);
+        queryWrapper.like(StringUtils.isNotBlank(source), "source", source);
         // JSON 数组查询
         if (CollUtil.isNotEmpty(tagList)) {
             for (String tag : tagList) {
@@ -124,6 +125,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(needVip), "needVip", needVip);
         queryWrapper.eq(ObjectUtils.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
+        queryWrapper.eq(ObjectUtils.isNotEmpty(reviewerId), "reviewerId", reviewerId);
         // 排序规则
         queryWrapper.orderBy(SqlUtils.validSortField(sortField),
                 sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
@@ -174,9 +176,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             return questionVOPage;
         }
         // 对象列表 => 封装对象列表
-        List<QuestionVO> questionVOList = questionList.stream().map(question -> {
-            return QuestionVO.objToVo(question);
-        }).collect(Collectors.toList());
+        List<QuestionVO> questionVOList = questionList.stream().map(QuestionVO::objToVo).collect(Collectors.toList());
 
         // 根据需要为封装对象补充值，不需要的内容可以删除
         // region 可选
@@ -212,17 +212,20 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         QueryWrapper<Question> queryWrapper = this.getQueryWrapper(questionQueryRequest);
 
         // 题库ID
-        Long questionBankId = questionQueryRequest.getQuestionBankId();
-        if (questionBankId != null) {
+        List<Long> questionBankIds = questionQueryRequest.getQuestionBankIds();
+        if (CollUtil.isNotEmpty(questionBankIds)) {
             LambdaQueryWrapper<QuestionBankQuestion> lambdaQueryWrapper = Wrappers.lambdaQuery(QuestionBankQuestion.class)
                     .select(QuestionBankQuestion::getQuestionId)
-                    .eq(QuestionBankQuestion::getQuestionBankId, questionBankId);
+                    .in(QuestionBankQuestion::getQuestionBankId, questionBankIds);
             List<QuestionBankQuestion> questionList = questionBankQuestionService.list(lambdaQueryWrapper);
             if (!CollUtil.isEmpty(questionList)) {
                 Set<Long> questionIdSet = questionList.stream()
                         .map(QuestionBankQuestion::getQuestionId)
                         .collect(Collectors.toSet());
                 queryWrapper.in("id", questionIdSet);
+            } else {
+                // 题库为空，返回空列表
+                return new Page<>(current, size, 0);
             }
         }
 
@@ -235,25 +238,32 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             }
         } else {
             // 审核状态处理
-            if (reviewStatus == null) {
-                queryWrapper.and(wrapper -> wrapper.eq("reviewStatus", ReviewStatusEnum.PASS.getValue())
-                        .or().eq("reviewStatus", ReviewStatusEnum.WITHOUT.getValue()));
-            } else if (!ReviewStatusEnum.PASS.getValue().equals(reviewStatus)) {
-                queryWrapper.eq("reviewStatus", reviewStatus)
-                        .eq("userId", myId);
+            if (myId == null) {
+                queryWrapper.eq("reviewStatus", ReviewStatusEnum.PASS.getValue());
+            } else {
+                if (reviewStatus == null) {
+                    queryWrapper.and(wrapper -> wrapper.eq("reviewStatus", ReviewStatusEnum.PASS.getValue())
+                            .or().eq("reviewStatus", ReviewStatusEnum.WITHOUT.getValue()));
+                } else if (!ReviewStatusEnum.PASS.getValue().equals(reviewStatus)) {
+                    queryWrapper.eq("reviewStatus", reviewStatus)
+                            .eq("userId", myId);
+                }
             }
-
             // 可见性处理
-            if (visibleStatus == null || !Arrays.asList(0, 1).contains(visibleStatus)) {
-                queryWrapper
-                        .and(wrapper -> wrapper.eq("visibleStatus", 0)
-                                .or()
-                                .eq("visibleStatus", 1)
-                                .eq("userId", myId));
-            } else if (visibleStatus == 0) {
-                queryWrapper.eq(ObjectUtils.isNotEmpty(visibleStatus), "visibleStatus", 0);
-            } else if (visibleStatus == 1) {
-                queryWrapper.and(wrapper -> wrapper.eq("visibleStatus", 1).eq("userId", myId));
+            if (myId == null) {
+                queryWrapper.eq("visibleStatus", 0);
+            } else {
+                if (visibleStatus == null || !Arrays.asList(0, 1).contains(visibleStatus)) {
+                    queryWrapper
+                            .and(wrapper -> wrapper.eq("visibleStatus", 0)
+                                    .or()
+                                    .eq("visibleStatus", 1)
+                                    .eq("userId", myId));
+                } else if (visibleStatus == 0) {
+                    queryWrapper.eq(ObjectUtils.isNotEmpty(visibleStatus), "visibleStatus", 0);
+                } else if (visibleStatus == 1) {
+                    queryWrapper.and(wrapper -> wrapper.eq("visibleStatus", 1).eq("userId", myId));
+                }
             }
         }
 

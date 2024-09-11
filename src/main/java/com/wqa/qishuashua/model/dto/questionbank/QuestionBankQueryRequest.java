@@ -1,8 +1,6 @@
 package com.wqa.qishuashua.model.dto.questionbank;
 
-import com.wqa.qishuashua.common.ErrorCode;
 import com.wqa.qishuashua.common.PageRequest;
-import com.wqa.qishuashua.exception.ThrowUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -51,6 +49,16 @@ public class QuestionBankQueryRequest extends PageRequest implements Serializabl
      * 可见状态：0-所有人可见, 1-仅本人可见
      */
     private Integer visibleStatus;
+
+    /**
+     * 审核信息
+     */
+    private String reviewMessage;
+
+    /**
+     * 审核人 id
+     */
+    private Long reviewerId;
 
     /**
      * 图片

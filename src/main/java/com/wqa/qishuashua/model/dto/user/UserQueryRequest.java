@@ -28,6 +28,16 @@ public class UserQueryRequest extends PageRequest implements Serializable {
     private String mpOpenId;
 
     /**
+     * 用户账号
+     */
+    private String userAccount;
+
+    /**
+     * 手机号
+     */
+    private String phoneNumber;
+
+    /**
      * 用户昵称
      */
     private String userName;

@@ -86,6 +86,8 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
         Integer reviewStatus = questionBankQueryRequest.getReviewStatus();
         String picture = questionBankQueryRequest.getPicture();
         String description = questionBankQueryRequest.getDescription();
+        String reviewMessage = questionBankQueryRequest.getReviewMessage();
+        Long reviewerId = questionBankQueryRequest.getReviewerId();
 
         // 从多字段中搜索
         if (StringUtils.isNotBlank(searchText)) {
@@ -95,11 +97,13 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
         // 模糊查询
         queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
         queryWrapper.like(StringUtils.isNotBlank(description), "description", description);
+        queryWrapper.like(StringUtils.isNotBlank(reviewMessage), "reviewMessage", reviewMessage);
 
         // 精确查询
         queryWrapper.ne(ObjectUtils.isNotEmpty(notId), "id", notId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
+        queryWrapper.eq(ObjectUtils.isNotEmpty(reviewerId), "reviewerId", reviewerId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.eq(ObjectUtils.isNotEmpty(picture), "picture", picture);
         // 排序规则
