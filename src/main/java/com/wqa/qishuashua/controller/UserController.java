@@ -20,6 +20,8 @@ import com.wqa.qishuashua.model.entity.User;
 import com.wqa.qishuashua.model.vo.LoginUserVO;
 import com.wqa.qishuashua.model.vo.UserVO;
 import com.wqa.qishuashua.service.UserService;
+
+import java.time.LocalDate;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -308,5 +310,30 @@ public class UserController {
         boolean result = userService.updateById(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 添加用户签到记录
+     * @param request
+     * @return
+     */
+    @PostMapping("/add/signIn")
+    public BaseResponse<Boolean> addUserSignIn(HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        boolean result = userService.addUserSignIn(loginUser.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 获取用户签到记录
+     * @param year 年份
+     * @param request
+     * @return
+     */
+    @GetMapping("/get/signIn")
+    public BaseResponse<List<Integer>> getUserSignInRecord(Integer year, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        List<Integer> userSignInRecord = userService.getUserSignInRecord(loginUser.getId(), year);
+        return ResultUtils.success(userSignInRecord);
     }
 }

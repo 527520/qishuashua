@@ -1,5 +1,6 @@
 package com.wqa.qishuashua.model.vo;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.wqa.qishuashua.model.entity.Question;
@@ -156,7 +157,9 @@ public class QuestionVO implements Serializable {
         QuestionVO questionVO = new QuestionVO();
         BeanUtils.copyProperties(question, questionVO);
         questionVO.setTagList(JSONUtil.toList(question.getTags(), String.class));
-        questionVO.setReviewStatus(ReviewStatusEnum.getEnumByValue(question.getReviewStatus()).getText());
+        if (question.getReviewStatus() != null) {
+            questionVO.setReviewStatus(ReviewStatusEnum.getEnumByValue(question.getReviewStatus()).getText());
+        }
         return questionVO;
     }
 }
