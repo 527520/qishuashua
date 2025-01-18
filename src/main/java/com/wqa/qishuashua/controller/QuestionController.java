@@ -12,10 +12,7 @@ import com.wqa.qishuashua.common.ResultUtils;
 import com.wqa.qishuashua.constant.UserConstant;
 import com.wqa.qishuashua.exception.BusinessException;
 import com.wqa.qishuashua.exception.ThrowUtils;
-import com.wqa.qishuashua.model.dto.question.QuestionAddRequest;
-import com.wqa.qishuashua.model.dto.question.QuestionEditRequest;
-import com.wqa.qishuashua.model.dto.question.QuestionQueryRequest;
-import com.wqa.qishuashua.model.dto.question.QuestionUpdateRequest;
+import com.wqa.qishuashua.model.dto.question.*;
 import com.wqa.qishuashua.model.entity.*;
 import com.wqa.qishuashua.model.enums.ReviewStatusEnum;
 import com.wqa.qishuashua.model.vo.QuestionVO;
@@ -320,5 +317,15 @@ public class QuestionController {
         Page<Question> questionPage = questionService.searchFromEs(questionQueryRequest);
         return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }
+
+    @PostMapping("/delete/batch")
+    public BaseResponse<Boolean> batchDeleteQuestions(@RequestBody QuestionBatchDeleteRequest questionBatchDeleteRequest,
+                                                      HttpServletRequest request) {
+        ThrowUtils.throwIf(questionBatchDeleteRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        questionService.batchDeleteQuestion(questionBatchDeleteRequest.getQuestionIdList(), loginUser);
+        return ResultUtils.success(true);
+    }
+
     // endregion
 }

@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wqa.qishuashua.common.ErrorCode;
 import com.wqa.qishuashua.constant.CommonConstant;
+import com.wqa.qishuashua.constant.UserConstant;
 import com.wqa.qishuashua.exception.ThrowUtils;
 import com.wqa.qishuashua.mapper.QuestionMapper;
 import com.wqa.qishuashua.model.dto.question.QuestionEsDTO;
@@ -37,6 +38,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -357,5 +359,25 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         }
         page.setRecords(resourceList);
         return page;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchDeleteQuestion(List<Long> questionIdList, User loginUser) {
+        ThrowUtils.throwIf(CollUtil.isEmpty(questionIdList), ErrorCode.PARAMS_ERROR, "题目列表为空");
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR, "用户信息非法");
+        // 权限校验
+        if (!loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE)) {
+            LambdaQueryWrapper<Question> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.in(Question::getId, questionIdList);
+            this.list(queryWrapper).forEach(question -> {
+                ThrowUtils.throwIf(!loginUser.getId().equals(question.getUserId()),
+                        ErrorCode.NO_AUTH_ERROR, "存在没有权限删除的题目");
+            });
+        }
+        // 执行删除
+        this.removeBatchByIds(questionIdList);
+        // 移除题目题库关系
+        questionBankQuestionService.removeBatchByQuestionIdList(questionIdList);
     }
 }

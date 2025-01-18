@@ -12,10 +12,10 @@ import com.wqa.qishuashua.model.entity.User;
 import com.wqa.qishuashua.model.vo.QuestionVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * 题目服务
- *
  */
 public interface QuestionService extends IService<Question> {
 
@@ -23,7 +23,7 @@ public interface QuestionService extends IService<Question> {
      * 校验数据
      *
      * @param question
-     * @param add 对创建的数据进行校验
+     * @param add      对创建的数据进行校验
      */
     void validQuestion(Question question, boolean add);
 
@@ -34,7 +34,7 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     QueryWrapper<Question> getQueryWrapper(QuestionQueryRequest questionQueryRequest);
-    
+
     /**
      * 获取题目封装
      *
@@ -63,8 +63,17 @@ public interface QuestionService extends IService<Question> {
 
     /**
      * 从 ES 查询题目
+     *
      * @param questionQueryRequest
      * @return
      */
     Page<Question> searchFromEs(QuestionQueryRequest questionQueryRequest);
+
+    /**
+     * 批量删除题目
+     *
+     * @param questionIdList
+     * @param loginUser
+     */
+    void batchDeleteQuestion(List<Long> questionIdList, User loginUser);
 }
